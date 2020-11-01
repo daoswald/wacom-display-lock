@@ -1,0 +1,91 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use ExtUtils::MakeMaker qw(prompt);
+
+if ($ARGV[0] =~ m{-(?:-)?h(?:elp)?}) {
+    die "Usage: xsetwacom [--help] [DISPLAY ID]\n\n",
+        "  If DISPLAY ID is not passed, user is prompted.\n",
+        "  If not a TTY, default display ID 0 is used.\n";
+}
+
+my $devices = `/usr/bin/xsetwacom list devices`;
+die "Could not find a Wacom tablet in [$devices].\nExiting.\n"
+    unless $devices;
+
+# Example output from xsetwacom list devices call:
+#Wacom Intuos BT M Pad pad       	id: 24	type: PAD
+#Wacom Intuos BT M Pen stylus    	id: 25	type: STYLUS
+#Wacom Intuos BT M Pen eraser    	id: 26	type: ERASER
+#Wacom Intuos BT M Pen cursor    	id: 27	type: CURSOR
+
+my $monitors= `/usr/bin/xrandr --listactivemonitors`;
+
+# Example output from xrander --listactivemonitors calls:
+#Monitors: 3
+# 0: +*DP-1-1 1920/527x1080/296+0+0  DP-1-1
+# 1: +DP-1-2 1920/527x1080/296+1920+0  DP-1-2
+# 2: +DP-2 1920/527x1080/296+3840+0  DP-2
+
+die "Could not find any attached displays in [$monitors].\nExiting\n"
+    unless $monitors =~ m{Monitors:\s*(\d+)} && $1 > 0;
+
+my %monitors;
+my $left;
+
+print "Connected displays\n";
+
+# Find characteristics of connected monitors.
+while (
+    $monitors =~ m{
+        ^\s*
+        (\d+):\s*               # Number            $1
+        ([\w\d*+-]+)\s*         # Description       $2
+        (\d+)/\d+x              # Horizontal size   $3
+        (\d+)/\d+               # Vertical size     $4
+        \d*(\+\d+\+\d+)\s*      # Offset            $5
+        (\S+)\s*$               # Name              $6
+    }gmx
+) {
+    $monitors{$1} = $6;
+    print "\t$1: $6 ($2), ${3}x$4, at offset $5\n";
+    $left = $1 if $5 =~ m{\+0\+\0};
+}
+
+print "\n";
+
+die "Couldn't find any suitable monitors in [[$monitors]].\nExiting.\n"
+    unless scalar keys %monitors;
+
+$left //= exists($monitors{0}) ? 0 : (keys %monitors)[0]; # If we somehow didn't find a +0+0 offset,
+                                                         # pick monitor 0. If there is no monitor 0,
+                                                         # pick any monitor that exists. Should never
+                                                         # happen.
+
+my $want_id = $ARGV[0];
+while(!defined($want_id) || !exists($monitors{$want_id})) {
+    $want_id = prompt "Choose a display to lock the Wacom tablet to (CTRL-C to abort):", $left;
+}
+
+my $display_name = $monitors{$want_id};
+my($pad_id, $stylus_id);
+
+while($devices =~ m/id:\s*(\d+)\s+type:\s*(\w+)\s*$/mg) {
+    if ($2 eq 'PAD') {$pad_id=$1; warn "$2, $1\n";}
+    elsif ($2 eq 'STYLUS') {$stylus_id=$1; warn "$2, $1\n";}
+}
+
+die "Cannot find a PAD ID.\n" unless $pad_id;
+die "Cannot find a STYLUS ID.\n" unless $stylus_id;
+
+my $err;
+foreach my $id ($pad_id, $stylus_id) {
+    if (0 != system("/usr/bin/xsetwacom set $id MapToOutput $display_name")) {
+        $err++;
+        warn "Failed to lock Wacom device ID $id to $display_name ($want_id)\n";
+    }
+}
+
+die "$err device(s) failed to lock on $display_name ($want_id)\n" if $err;
+print "Wacom device locked to display $want_id.\n\n";

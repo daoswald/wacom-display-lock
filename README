@@ -1,0 +1,35 @@
+wacomlock - Utility for locking Wacom tablet to an xserv display (GNU/Linux)
+
+SYNOPSIS
+
+    wacomlock [--help|-h] [DISPLAY ID]
+
+    wacomlock # If no DISPLAY ID is passed, the user is prompted.
+
+DESCRIPTION
+
+The Gnome Settings panel for locking a Wacom tablet to a specific display is buggy, and
+mistakenly locks only the tablet, not the pen device as well. At least for the Wacom 6100 M,
+it is necessary to lock the pen device too, or the setting has no effect.
+
+This utility will detect connected displays, list them, and then prompt the user to choose
+one to lock the tablet to. The lock can be switched to a different display at any time, and
+the lock only persists for the current login session; on reboot the tablet will reset to
+its normal operating mode.
+
+A future version of this script will allow for unsetting the lock.
+
+This script is written in Perl, and has no external dependencies aside from the
+xrandr and xsetwacom executables, and a Perl distribution itself (any version from
+5.10 onward is fine).
+
+AUTHOR
+
+David Oswald
+
+Submit comments, issues and patches to:
+https://github.com/daoswald/wacom-display-lock
+
+LICENSE
+
+This software uses the MIT license.
