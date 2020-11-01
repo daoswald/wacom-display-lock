@@ -5,7 +5,7 @@ use warnings;
 use ExtUtils::MakeMaker qw(prompt);
 
 if ($ARGV[0] =~ m{-(?:-)?h(?:elp)?}) {
-    die "Usage: xsetwacom [--help] [DISPLAY ID]\n\n",
+    die "Usage: wacomlock [--help] [DISPLAY ID]\n\n",
         "  If DISPLAY ID is not passed, user is prompted.\n",
         "  If not a TTY, default display ID 0 is used.\n";
 }

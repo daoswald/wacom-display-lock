@@ -23,6 +23,12 @@ This script is written in Perl, and has no external dependencies aside from the
 xrandr and xsetwacom executables, and a Perl distribution itself (any version from
 5.10 onward is fine).
 
+INSTALLATION
+
+I recommend copying the executable 'wacomlock' into ~/bin/ and adding ~/bin/ to your
+path. Alternatively, it could be copied to /usr/local/bin/ for all users on the system
+to access.
+
 AUTHOR
 
 David Oswald
